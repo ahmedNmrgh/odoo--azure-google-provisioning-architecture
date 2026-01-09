@@ -1,0 +1,2 @@
+# odoo--azure-google-provisioning-architecture
+This project aims to make Odoo the single source of truth for user management and automatically synchronize user changes (creation, updates, deactivation) to Microsoft Entra ID and Google Workspace.  Instead of manually creating and managing users across multiple platforms, all user lifecycle actions are performed once in Odoo .
