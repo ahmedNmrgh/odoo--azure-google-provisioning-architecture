@@ -1,0 +1,199 @@
+# Infrastructure Design
+
+This document describes every cloud resource deployed, its purpose,
+configuration details, security posture, and SKU selection.
+
+
+
+
+1. Azure Subscription
+
+- Type: Pay-as-you-go / Enterprise
+- Purpose:
+  - Hosts all automation infrastructure
+  - Central execution plane
+- Isolation:
+  - Customers are NOT deployed into separate subscriptions
+  - Isolation is achieved at identity directory level, not infra level
+
+
+
+2. Resource Group
+
+
+- Name: rg-identity-provisioning
+- Region: West Europe / North Europe (latency dont matter that match)
+- Purpose:
+  - Logical grouping
+  - RBAC boundary
+  - Lifecycle management
+
+
+
+3. Azure Storage Account (Centralized)
+
+
+- Name: ------------------
+- SKU: Standard_LRS
+- Kind: StorageV2
+- Purpose:
+  - CSV ingestion
+  - Queue-based workload decoupling
+  - Audit archive
+  - Dry-run outputs
+
+### Containers
+- uploads/
+  - uploads/{customerId}/users.csv
+- archive/
+  - archive/{customerId}/{timestamp}.csv
+- dryrun/
+  - dryrun/{customerId}/{timestamp}.json
+- logs/
+
+### Queues
+- provisioning-queue
+- provisioning-poison
+
+### Configuration
+- Public access: Disabled
+- Access tier: Hot
+- TLS: 1.2
+- Shared Key access: Disabled
+- Authentication: Managed Identity only
+
+### Why centralized storage?
+- Single ingestion point
+- Easier monitoring
+- Easier scaling
+- Strong audit trail
+- No per-tenant infra duplication
+
+
+
+4. Azure Function App
+- Name: func-identity-provisioning
+- Runtime: Python 3.11
+- Hosting Plan: Consumption Plan
+- OS: Linux
+- Region: North/West EU
+
+### Functions
+1. Blob Trigger Function
+   - Trigger: uploads/{customerId}/users.csv
+   - Responsibility:
+     - Validate CSV
+     - Extract customerId
+     - Load configuration
+     - Push message to queue
+
+2. Queue Trigger Function
+   - Trigger: provisioning-queue
+   - Responsibility:
+     - Authentication
+     - Dry-run execution
+     - User creation
+     - Result logging
+
+### Scaling
+- Automatic horizontal scaling
+- Queue length controls concurrency
+- Built-in retry policies
+- Poison queue handling
+
+### Configuration
+- System Assigned Managed Identity: Enabled
+- Application Settings:
+  - KEYVAULT_URI
+  - STORAGE_ACCOUNT_NAME
+  - MAX_USERS_PER_BATCH
+  - DRY_RUN_ENABLED
+
+
+
+5. Azure Key Vault
+- Name: kv-identity-prov
+- SKU: Standard
+- Purpose:
+  - Store secrets
+  - Store certificates
+  - Store Google service account keys
+
+### Stored Items
+- Microsoft Entra app certificates (per tenant)
+- Google service account JSON (per workspace)
+- Customer configuration secrets
+
+### Access
+- Function App Managed Identity: Read access
+- Public access: Disabled
+- Soft delete: Enabled
+- Purge protection: Enabled
+
+
+6. Microsoft Entra App Registrations
+### Purpose
+- Authenticate into Microsoft Entra tenants using app-only permissions
+
+### Model
+- One app registration per customer tenant
+- App lives inside the customer tenant
+- Platform operator is Global Admin
+
+### Authentication
+- Certificate-based authentication
+- No client secrets
+
+### Permissions
+- Microsoft Graph (Application permissions):
+  - User.ReadWrite.All
+  - Group.ReadWrite.All (optional)
+  - Directory.ReadWrite.All
+
+### Consent
+- Admin consent granted once
+- No interactive login
+- No delegated permissions
+
+
+
+7. Google Workspace Authentication
+### Service Account
+- One service account per Workspace
+- Stored securely in Key Vault
+
+### Domain-Wide Delegation
+- Enabled on Workspace
+- OAuth scopes:
+  - https://www.googleapis.com/auth/admin.directory.user
+  - https://www.googleapis.com/auth/admin.directory.group (optional)
+
+### Authentication Flow
+- Service account impersonates Workspace admin
+- No user interaction
+- No OAuth consent screens
+
+8. Networking
+- Public endpoints only
+- No VNET integration
+- Access controlled via:
+  - Managed Identity
+  - RBAC
+  - TLS enforcement
+
+9. Security Model
+- No credentials in code
+- No shared tenants
+- No cross-tenant trust
+- App-only authentication
+- Certificate-based auth
+- Key Vault-backed secrets
+- Per-customer isolation
+
+10. Cost Model
+- Azure Functions (Consumption): Pay per execution
+- Storage Account: Minimal cost
+- Key Vault: Low transaction cost
+- No idle compute cost
+
+
