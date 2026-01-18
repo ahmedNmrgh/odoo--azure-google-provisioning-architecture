@@ -1,28 +1,32 @@
-import azure.functions as func
-import json
-from azure.storage.queue import QueueClient
 import os
+import json
+import azure.functions as func
+from azure.storage.queue import QueueClient
 
-QUEUE_NAME = "user-provisioning-queue"
+QUEUE_NAME = "user-sync"
 
 def main(myblob: func.InputStream):
-    blob_path = myblob.name  # csv-uploads/company_123/users.csv
-    parts = blob_path.split("/")
+    # myblob.name example: "company_123/users.csv"
+    path_parts = myblob.name.split("/")
+    
+    if len(path_parts) != 2:
+        print(f"ERROR: Unexpected blob path: {myblob.name}")
+        return
+    
+    company_folder = path_parts[0]
+    filename = path_parts[1]
 
-    if len(parts) != 3:
-        return  # invalid structure
-
-    company = parts[1]
     csv_content = myblob.read().decode("utf-8")
 
-    message = {
-        "company": company,
-        "csv": csv_content
-    }
-
-    queue = QueueClient.from_connection_string(
+    queue_client = QueueClient.from_connection_string(
         os.environ["AzureWebJobsStorage"],
         QUEUE_NAME
     )
 
-    queue.send_message(json.dumps(message))
+    message = {
+        "company": company_folder,
+        "csv": csv_content
+    }
+
+    queue_client.send_message(json.dumps(message))
+    print(f"✅ Queued CSV '{filename}' for company '{company_folder}'")
