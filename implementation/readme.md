@@ -121,7 +121,6 @@
 - JSON configuration
 - Azure Key Vault (preferred)
 
----
 
 ### PHASE 7: App Registration
 
@@ -144,7 +143,7 @@
 - Grant scope: `admin.directory.user`
 - Delegate to admin email
 
----
+
 
 ### PHASE 8: CSV Contract Definition
 
@@ -160,7 +159,7 @@ firstName,lastName,displayName,primaryEmail
 - Email domain must match tenant
 - Not in the CSV → no user
 
----
+
 
 ### PHASE 9: Execution Flow
 
@@ -255,7 +254,7 @@ firstName,lastName,displayName,primaryEmail
 - Complex reporting
 - Cross-run analytics
 
----
+
 
 ### PHASE 11: Security Posture
 
@@ -268,7 +267,7 @@ firstName,lastName,displayName,primaryEmail
 - No interactive login
 - Full audit logging
 
----
+
 
 ### PHASE 12: Scaling Model
 
@@ -278,56 +277,10 @@ firstName,lastName,displayName,primaryEmail
 - Customers isolated by configuration
 - Linear scaling (not exponential)
 
----
 
-### PHASE 13: Your Role
 
-#### Initial
 
-- Global Administrator
-- Tenant owner
-- Automation owner
 
-#### Transition
-
-- Delegate admin to customer IT
-- Remove yourself when contract ends
-- Clean lifecycle management
-
----
-
-## 🎙️ Interview Explanation
-
-> "This system minimizes human error, avoids identity duplication, and keeps licensing simple. Everything complex is done once. Everything repetitive is automated."
-
----
-
-## 📦 Deliverables Summary
-
-1. **Central Azure Infrastructure**
-   - Blob Storage with uploads/archive containers
-   - Azure Function App (Python)
-
-2. **Configuration Management**
-   - Customer metadata store
-   - App registration/Service accounts
-   - Key Vault integration
-
-3. **Processing Engine**
-   - CSV validation and parsing
-   - Dry-run safety mode
-   - Multi-provider support (MS/Google)
-   - Password generation
-
-4. **Audit Trail**
-   - Execution logging
-   - CSV archiving
-   - Immutable records
-
-5. **Documentation**
-   - Setup guides
-   - CSV format specification
-   - Troubleshooting procedures
 
 
 
