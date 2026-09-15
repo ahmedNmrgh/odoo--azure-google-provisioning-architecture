@@ -6,7 +6,3 @@ this project is an issue I have talked about with my interviewer in one of my jo
 
 
 ### i got the job 
-
-
-got sc300 too and working on az400 rn 
-and this is part of it testing azure devops with GH 
